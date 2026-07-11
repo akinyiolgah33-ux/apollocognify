@@ -1,0 +1,13 @@
+[
+  { "date": "01-01", "name": "New Year's Day", "type": "international" },
+  { "date": "02-14", "name": "Valentine's Day", "type": "international" },
+  { "date": "03-17", "name": "St. Patrick's Day", "type": "international" },
+  { "date": "04-22", "name": "Earth Day", "type": "international" },
+  { "date": "05-01", "name": "Labor Day", "type": "international" },
+  { "date": "10-31", "name": "Halloween", "type": "international" },
+  { "date": "12-25", "name": "Christmas Day", "type": "international" },
+  { "date": "12-31", "name": "New Year's Eve", "type": "international" },
+  { "date": "07-04", "name": "Independence Day", "type": "national" },
+  { "date": "11-11", "name": "Veterans Day", "type": "national" },
+  { "date": "11-28", "name": "Thanksgiving", "type": "national" }
+]

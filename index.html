@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark-live">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognify | Advanced Study App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="live-wallpaper.js"></script>
+<script type="module" src="firebase-init.js"></script>
+<script type="module" src="firebase-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <link rel="stylesheet" href="index.css?v=4">
+    <link rel="stylesheet" href="plan-page.css?v=3">
+    <style>
+        .theme-card-area { display: grid; grid-template-columns: 1.65fr 1fr; gap: 1rem; align-items: start; }
+        .theme-card-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+        .theme-card { position: relative; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 1rem; background: rgba(255,255,255,0.06); color: var(--text-main); text-align: left; cursor: pointer; transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease; overflow: hidden; }
+        .theme-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.12); border-color: var(--neon-accent); }
+        .theme-card.active { border-color: var(--primary-color); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22); background: rgba(255,255,255,0.16); }
+        .theme-card.active::after { content: 'Selected'; position: absolute; top: 12px; right: 12px; background: var(--primary-color); color: white; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+        .theme-card-swatch { display: block; width: 100%; min-height: 110px; border-radius: 18px; background-size: cover; background-position: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+        .theme-preview { min-height: 160px; border-radius: 22px; border: 1px solid var(--border-color); background-size: cover; background-position: center; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+        .theme-preview::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.34)); }
+        .theme-preview::after { content: 'Applied theme preview'; position: absolute; left: 1rem; bottom: 1rem; color: rgba(255,255,255,0.92); font-size: 0.82rem; font-weight: 600; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+        .theme-preview-label { font-size: 0.95rem; color: var(--text-main); line-height: 1.4; }
+        .theme-selector { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+        /* Passtime Page */
+        .passtime-page-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 0.45fr); gap: 1.5rem; padding: 1.5rem; align-items: start; }
+        .passtime-left { display: flex; flex-direction: column; gap: 1.5rem; }
+        .passtime-right { display: flex; flex-direction: column; gap: 1.25rem; }
+        .game-cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .game-card { padding: 1.25rem; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--glass-shadow); transition: transform 0.22s ease, border-color 0.25s ease, box-shadow 0.22s ease; display: flex; flex-direction: column; gap: 0.65rem; cursor: pointer; }
+        .game-card:hover { transform: translateY(-4px); border-color: var(--neon-accent); box-shadow: 0 10px 36px rgba(0,0,0,0.22); }
+        .game-card.active-game { border-color: var(--primary-color); background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-card)); }
+        .game-card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 0.25rem; }
+        .game-card h4 { margin: 0; font-size: 1rem; color: var(--text-main); }
+        .game-card p { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+        .game-card-stat { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--neon-accent); text-transform: uppercase; }
+        .game-card-btns { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.5rem; }
+        .game-card-btns button { flex: 1; padding: 0.45rem 0.5rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: var(--text-main); cursor: pointer; font-size: 0.8rem; font-family: inherit; font-weight: 600; transition: all 0.18s; }
+        .game-card-btns button:hover { background: var(--primary-color); color: white; border-color: transparent; }
+        .game-card-btns .fullscreen-btn:hover { background: var(--neon-accent); color: #000; }
+        .passtime-game-stage { min-height: 400px; border-radius: 22px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.35); overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
+        .passtime-game-stage canvas { display: block; width: 100% !important; height: 100% !important; }
+        .game-stage-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 360px; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; text-align: center; padding: 1.5rem; gap: 0.75rem; }
+        .game-stage-placeholder i { font-size: 2.5rem; opacity: 0.4; }
+        .passtime-stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+        .passtime-stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1rem; display: flex; flex-direction: column; gap: 0.3rem; }
+        .passtime-stat-card .stat-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+        .passtime-stat-card .stat-value { font-size: 1.85rem; font-weight: 800; background: linear-gradient(135deg, var(--primary-color), var(--neon-accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+        .passtime-stat-card .stat-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .break-tip-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.1rem; }
+        .break-tip-card h5 { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--neon-accent); display: flex; align-items: center; gap: 0.4rem; }
+        .break-tip-card p { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+        .inline-controls-wrap { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.75rem 0; user-select: none; }
+        .game-ctl-inline { width: 48px; height: 48px; font-size: 1.2rem; padding: 0; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.08); color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; font-family: inherit; }
+        .game-ctl-inline:active { background: var(--primary-color); color: white; }
+        /* Settings Page */
+        .settings-page-wrap { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        .settings-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; overflow: hidden; }
+        .settings-section-header { display: flex; align-items: center; gap: 0.75rem; padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.03); }
+        .settings-section-header i { font-size: 1.4rem; color: var(--primary-color); }
+        .settings-section-header h4 { margin: 0; font-size: 1rem; font-weight: 700; }
+        .settings-section-header p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+        .settings-section-body { padding: 1.25rem 1.5rem; display: grid; gap: 1rem; }
+        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 42px; }
+        .settings-row-label { display: flex; flex-direction: column; gap: 0.2rem; }
+        .settings-row-label span { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .settings-row-label small { font-size: 0.77rem; color: var(--text-muted); }
+        .settings-row .settings-control { flex-shrink: 0; }
+        .settings-select { padding: 0.6rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--text-main); font-family: inherit; font-size: 0.88rem; min-width: 180px; }
+        .settings-btn { padding: 0.55rem 1.1rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.06); color: var(--text-main); font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.18s; white-space: nowrap; }
+        .settings-btn:hover { background: var(--primary-color); color: white; border-color: transparent; }
+        .settings-btn.danger:hover { background: #ef4444; border-color: transparent; }
+        .settings-btn.primary { background: var(--primary-color); color: white; border-color: transparent; }
+        .settings-btn.primary:hover { background: var(--secondary-color); }
+        .settings-key-input { padding: 0.6rem 0.9rem; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--text-main); font-family: inherit; font-size: 0.88rem; width: 220px; }
+        .settings-toggle-wrap { display: flex; align-items: center; gap: 0.75rem; }
+        .settings-divider { height: 1px; background: var(--border-color); margin: 0.25rem 0; }
+        .settings-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 900px) { .passtime-page-wrap { grid-template-columns: 1fr; } .settings-grid-2 { grid-template-columns: 1fr; } .game-cards-row { grid-template-columns: 1fr; } }
+        /* Game Modal (hidden by default) */
+        #game-modal { display: none; position: fixed; inset: 0; background: rgba(2, 8, 18, 0.92); z-index: 1200; align-items: center; justify-content: center; padding: 1.5rem; }
+        #game-container { width: 100%; min-height: 320px; position: relative; }
+        #game-container canvas { width: 100%; height: 100%; display: block; }
+    </style>
+    <link rel="preload" href="apollo_character.png" as="image">
+    <link rel="preload" href="apollo_avatar.png" as="image">
+    <link rel="preload" href="cognify_logo.png" as="image">
+    <link rel="preload" href="offline-dictionary.json" as="fetch">
+    <style id="apollo-anim-styles"></style>
+</head>
+<body>
+    <div id="local-auth-banner" style="display:none; position:fixed; top:0; left:0; right:0; background:#f59e0b; color:#061826; text-align:center; padding:6px 8px; z-index:9999; font-weight:700; font-family:inherit;">Running in local (offline) auth mode</div>
+    <canvas id="live-wallpaper-3d" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-2; pointer-events:none; display:none;"></canvas>
+    <canvas id="live-theme-canvas" aria-hidden="true"></canvas>
+    <div id="apollo-bg-container" style="position:fixed;inset:0;z-index:-1;pointer-events:none;"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo" style="display:flex;flex-direction:row;align-items:center;gap:0.8rem;margin-bottom:2rem;">
+                <!-- Apollo avatar container -->
+                <div id="apollo-sidebar-avatar" style="width: 50px; height: 50px; position: relative; background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div id="apollo-logo-avatar" class="apollo-logo-avatar" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; background:#08131f;">
+                        <img data-asset="avatar" src="apollo_avatar.png" alt="Apollo avatar" style="width:100%; height:100%; object-fit:cover; display:block;" />
+                    </div>
+                </div>
+                <!-- Cognify logo (cognify_logo.png) -->
+                <div class="cognify-logo-wrap" style="width:44px;height:44px;flex-shrink:0;position:relative;">
+                    <canvas id="brain-logo-canvas" width="88" height="88" aria-hidden="true" style="display:none;width:44px;height:44px;"></canvas>
+                    <img id="cognify-logo" src="cognify_logo.png" alt="Cognify logo" class="cognify-logo-img" style="width:44px; height:44px; object-fit:contain;" />
+                </div>
+                <div class="cognify-text" style="margin:0;">Cognify</div>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard"><i class="ph-house"></i> Dashboard</li>
+                <li data-target="apollo-page"><i class="ph-robot"></i> Apollo AI</li>
+                <li data-target="studyroom"><i class="ph-book-open"></i> Study Room</li>
+                <li data-target="planpage"><i class="ph-calendar-check"></i> Plan Page</li>
+                <li data-target="passtime"><i class="ph-game-controller"></i> Passtime</li>
+                <li data-target="settings"><i class="ph-gear"></i> Settings</li>
+            </ul>
+
+            <div style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--border-color);">
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <img id="profile-avatar-img" data-asset="avatar" src="apollo_avatar.png" alt="Apollo avatar" class="apollo-avatar-img" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-color);" />
+                    <div>
+                        <div style="font-size:0.95rem;font-weight:600;">Active Profile</div>
+                        <div id="active-profile-name" style="font-size:0.85rem;color:var(--text-muted);">Default</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div id="dashboard" class="page active">
+                <header class="header-top">
+                    <h2 class="page-title">Dashboard</h2>
+                    <div class="header-controls" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+                        <input type="text" id="universal-search-input" placeholder="Search tasks, notes or flashcards..." class="universal-search">
+                    </div>
+                </header>
+
+                <div class="dashboard-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; padding:1.5rem;">
+                    <div class="card" style="padding:1.5rem;">
+                        <h3 style="margin-top:0;"><i class="ph-bullseye"></i> Goals & Objectives</h3>
+                        <label style="display:block; margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">Main goal</label>
+                        <input id="main-goal" type="text" placeholder="Type your main goal for today" style="width:100%; padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); margin-top:0.5rem;">
+                        <label style="display:block; margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">Daily objectives</label>
+                        <textarea id="daily-objective" placeholder="List your objectives for the day..." style="width:100%; min-height:140px; padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); resize:vertical; margin-top:0.5rem;"></textarea>
+                    </div>
+
+                    <div class="card" style="padding:1.5rem; display:flex; flex-direction:column;">
+                        <h3 style="margin-top:0;"><i class="ph-check-square"></i> Tasks</h3>
+                        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1rem; align-items:center;">
+                            <input type="text" id="new-todo-input" placeholder="New task..." style="flex:1; min-width:180px; padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                            <button id="add-todo-btn" class="upload-btn" style="flex:0 0 120px;">Add task</button>
+                        </div>
+                        <ul id="todo-list" style="list-style:none; padding:0; margin:1rem 0 0 0; display:flex; flex-direction:column; gap:0.75rem; max-height:280px; overflow-y:auto;"></ul>
+                    </div>
+
+                    <div class="card" style="padding:1.5rem; grid-column:span 2;">
+                        <h3 style="margin-top:0;"><i class="ph-lightbulb"></i> Quick Notes</h3>
+                        <div id="dashboard-quick-notes" contenteditable="true" style="min-height:190px; padding:1rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); overflow:auto; margin-top:1rem;">
+                            Type quick goals, reminders, or progress notes here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apollo AI Assistant Page -->
+            <div id="apollo-page" class="page">
+                <header class="page-header" style="position:relative;">
+                    <h1>Apollo AI Assistant</h1>
+                    <p>Consult with Apollo, who thinks deeply and refers from real-time web references</p>
+                    <button class="exit-page-btn" onclick="exitToDashboard()" title="Back to Dashboard"><i class="ph-house"></i> Dashboard</button>
+                </header>
+                <div class="apollo-workspace" style="display:grid; grid-template-columns: 1.8fr 1.2fr; gap:1.5rem; padding:1.5rem;">
+                    <!-- Left: Chat Panel -->
+                    <div class="card glass" style="padding:1.5rem; display:flex; flex-direction:column; height: 580px;">
+                        <div id="apollo-chat-history" style="flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:1rem; background:rgba(0,0,0,0.1); border-radius:12px; border:1px solid var(--border-color); margin-bottom:1rem;">
+                            <div class="ai-message">Hello! I'm Apollo, your advanced study partner. Ask me any question, and I'll consult the web, show my deep thinking, and give you structured references.</div>
+                        </div>
+                        <!-- Collapsible Thinking Indicator -->
+                        <div id="apollo-thinking-panel" style="display:none; margin-bottom:0.75rem; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:12px; padding:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:600; color:var(--neon-accent);">
+                                <span><i class="ph-spinner ph-spin"></i> Apollo's Thought Process...</span>
+                                <span id="apollo-thinking-timer">0.0s</span>
+                            </div>
+                            <div id="apollo-thinking-steps" style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem; line-height:1.4; max-height:120px; overflow-y:auto;"></div>
+                        </div>
+                        <div style="display:flex; gap:0.75rem; align-items:center;">
+                            <input type="text" id="apollo-chat-input" placeholder="Type your academic question here (e.g., 'Explain photosynthesis step-by-step')..." style="flex:1; padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                            <button id="apollo-voice-chat-btn" class="upload-btn" style="border-radius:50%; width:48px; height:48px; padding:0; display:flex; align-items:center; justify-content:center;" title="Voice Input"><i class="ph-microphone" style="font-size:1.3rem;"></i></button>
+                            <button id="apollo-chat-send-btn" class="upload-btn" style="padding:0.85rem 1.5rem;"><i class="ph-paper-plane-right"></i> Send</button>
+                            <button id="apollo-chat-quit-btn" class="upload-btn" style="padding:0.85rem 1.5rem; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#f87171; display:flex; align-items:center; gap:0.4rem; font-weight:600; transition:all 0.2s; opacity:0.45; cursor:not-allowed;" title="Stop current query" disabled><i class="ph-stop-circle" style="font-size:1.15rem;"></i> Stop</button>
+                            <button id="apollo-chat-delete-btn" class="upload-btn" style="border-radius:50%; width:48px; height:48px; padding:0; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#f87171;" title="Delete History"><i class="ph-trash" style="font-size:1.3rem;"></i></button>
+                        </div>
+                    </div>
+                    <!-- Right: Referenced Sources & Study Cards -->
+                    <div style="display:flex; flex-direction:column; gap:1.5rem; height: 580px;">
+                        <div class="card glass" style="padding:1.5rem; flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                            <h3 style="margin-top:0;"><i class="ph-globe"></i> Web References</h3>
+                            <div id="apollo-web-references" style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.5rem; font-size:0.85rem; overflow-y:auto; color:var(--text-muted); flex:1;">
+                                No web sources referenced yet.
+                            </div>
+                        </div>
+                        <div class="card glass" style="padding:1.5rem; flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                            <h3 style="margin-top:0;"><i class="ph-notebook"></i> Study Cards Extracted</h3>
+                            <div id="apollo-study-cards" style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.5rem; font-size:0.85rem; overflow-y:auto; flex:1;">
+                                Interactive flashcards will appear here as you ask questions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="studyroom" class="page">
+                <header class="header-top" style="position:relative;">
+                    <h2 class="page-title">Study Room</h2>
+                    <button class="exit-page-btn" onclick="exitToDashboard()" title="Back to Dashboard"><i class="ph-house"></i> Dashboard</button>
+                </header>
+                <!-- Sub-tabs navigation for Study Room -->
+                <div class="studyroom-tabs" style="display:flex; gap:0.75rem; margin:1rem 1.5rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; flex-wrap:wrap;">
+                    <button class="upload-btn studyroom-tab-btn active-tab" data-subtarget="sr-notepad" style="border-radius:10px;"><i class="ph-pencil-simple"></i> MS Word Notepad</button>
+                    <button class="upload-btn studyroom-tab-btn" data-subtarget="sr-pdf" style="border-radius:10px;"><i class="ph-file-pdf"></i> PDF Annotator</button>
+                    <button class="upload-btn studyroom-tab-btn" data-subtarget="sr-flashcards" style="border-radius:10px;"><i class="ph-cards"></i> Flashcard decks</button>
+                </div>
+
+                <div class="studyroom-content-wrapper" style="padding:0 1.5rem 1.5rem 1.5rem;">
+                    <!-- Tab 1: Notepad and Dictionary -->
+                    <div id="sr-notepad" class="studyroom-subpage">
+                        <div class="dashboard-grid" style="display:grid; grid-template-columns: 1.8fr 1fr; gap:1.5rem;">
+                            <!-- Word Processor Container -->
+                            <div class="card glass" style="padding:1.5rem; display:flex; flex-direction:column;">
+                                <h3 style="margin-top:0; display:flex; align-items:center; gap:0.5rem;"><i class="ph-pencil-simple" style="color:var(--primary-color);"></i> MS Word Processor</h3>
+                                <!-- Word Ribbon -->
+                                <div class="word-ribbon" style="background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:12px; padding:0.5rem; margin-bottom:1rem; display:flex; flex-direction:column; gap:0.5rem;">
+                                    <div style="display:flex; gap:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.25rem; font-size:0.85rem; font-weight:600;">
+                                        <span class="ribbon-tab active" style="cursor:pointer; color:var(--primary-color);">Home</span>
+                                        <span class="ribbon-tab" style="cursor:pointer; color:var(--text-muted); pointer-events:none;">Insert</span>
+                                        <span class="ribbon-tab" style="cursor:pointer; color:var(--text-muted); pointer-events:none;">Page Layout</span>
+                                    </div>
+                                    <div class="ribbon-toolbar" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                                        <!-- Font dropdown -->
+                                        <select id="word-font-select" class="plan-select" style="padding:0.35rem 0.5rem; font-size:0.8rem;" title="Font Family">
+                                            <option value="Outfit">Outfit</option>
+                                            <option value="Inter">Inter</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Courier New">Monospace</option>
+                                        </select>
+                                        <!-- Size dropdown -->
+                                        <select id="word-size-select" class="plan-select" style="padding:0.35rem 0.5rem; font-size:0.8rem;" title="Font Size">
+                                            <option value="3">12pt (Body)</option>
+                                            <option value="4">14pt (Subtitle)</option>
+                                            <option value="5">18pt (H2)</option>
+                                            <option value="6">24pt (H1)</option>
+                                        </select>
+                                        <!-- Inline styles -->
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-bold" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; font-weight:bold;" title="Bold">B</button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-italic" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; font-style:italic;" title="Italic">I</button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-underline" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; text-decoration:underline;" title="Underline">U</button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-strike" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; text-decoration:line-through;" title="Strikethrough">S</button>
+                                        <!-- Colors -->
+                                        <label title="Text Color" style="display:flex; align-items:center; gap:2px; cursor:pointer;"><i class="ph-text-t" style="font-size:1.1rem;"></i><input type="color" id="word-font-color" value="#000000" style="width:20px; height:20px; border:none; padding:0; cursor:pointer; background:none;"></label>
+                                        <label title="Highlight Color" style="display:flex; align-items:center; gap:2px; cursor:pointer;"><i class="ph-paint-brush" style="font-size:1.1rem;"></i><input type="color" id="word-bg-color" value="#ffff00" style="width:20px; height:20px; border:none; padding:0; cursor:pointer; background:none;"></label>
+                                        <!-- Alignments -->
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-left" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;" title="Align Left"><i class="ph-align-left"></i></button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-center" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;" title="Align Center"><i class="ph-align-center"></i></button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-right" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;" title="Align Right"><i class="ph-align-right"></i></button>
+                                        <!-- Bullet/Number lists -->
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-ul" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;" title="Unordered List"><i class="ph-list-bullets"></i></button>
+                                        <button type="button" class="upload-btn word-tool-btn" id="word-btn-ol" style="padding:0.35rem; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;" title="Ordered List"><i class="ph-list-numbers"></i></button>
+                                        <!-- Clear / Export buttons -->
+                                        <button type="button" class="upload-btn" id="word-btn-clear" style="padding:0.35rem 0.5rem; font-size:0.75rem;" title="Clear Formatting"><i class="ph-wind"></i> Clear</button>
+                                        <button type="button" class="upload-btn" id="word-btn-export" style="padding:0.35rem 0.5rem; font-size:0.75rem; background:var(--primary-color); color:white;" title="Export notes"><i class="ph-file-text"></i> Export TXT</button>
+                                    </div>
+                                </div>
+                                <!-- Paper document view -->
+                                <div class="word-paper-view" style="background:rgba(0,0,0,0.15); padding:1rem; border-radius:12px; border:1px solid var(--border-color); display:flex; justify-content:center; overflow-y:auto; max-height:480px;">
+                                    <div id="word-editor-textarea" contenteditable="true" style="width:100%; max-width:720px; min-height:600px; background:white; color:#1e293b; padding:1.25in 0.85in 0.85in 0.85in; border-radius:4px; box-shadow:0 6px 16px rgba(0,0,0,0.2); outline:none; line-height:1.6; font-size:15px; font-family:'Inter',sans-serif; overflow-wrap:break-word;">
+                                        <h2 style="text-align:center; font-family:'Outfit',sans-serif; margin-bottom:1.5rem; color:#0f172a; font-size:24px;">Untitled Study Document</h2>
+                                        <p>Start composing your coursework notes here. Highlight terms or structure your paragraphs using the word ribbon toolbar above.</p>
+                                    </div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; font-size:0.82rem; color:var(--text-muted);">
+                                    <span id="word-char-count">Characters: 0</span>
+                                    <span id="word-word-count">Words: 0</span>
+                                </div>
+                            </div>
+                            <!-- Right Column: Dictionary and Summary -->
+                            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                                <div class="card glass" style="padding:1.5rem;">
+                                    <h3 style="margin-top:0;"><i class="ph-book-open"></i> Offline Dictionary</h3>
+                                    <input id="dashboard-dict-search" type="text" placeholder="Type a word..." style="width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); margin-top:0.75rem;">
+                                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; margin-top:0.9rem;">
+                                        <select id="dashboard-dialect-select" style="padding:0.5rem; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); min-width:130px; font-size:0.82rem;">
+                                            <option value="en-US">English (US)</option>
+                                            <option value="en-GB">English (UK)</option>
+                                        </select>
+                                        <label style="display:flex; align-items:center; gap:0.35rem; font-size:0.8rem; color:var(--text-muted);">
+                                            <input id="dashboard-dict-offline-only" type="checkbox"> Offline
+                                        </label>
+                                    </div>
+                                    <div id="dashboard-dict-result" style="max-height:180px; padding:0.75rem; border-radius:12px; border:1px solid var(--border-color); background:rgba(0,0,0,0.1); color:var(--text-color); margin-top:1rem; font-size:0.9rem; overflow-y:auto; min-height:80px;"></div>
+                                </div>
+                                <div class="card glass summary-card" style="padding:1.5rem;">
+                                    <h3 style="margin-top:0;"><i class="ph-file-text"></i> AI Summary</h3>
+                                    <button class="generate-btn upload-btn" style="margin-bottom:0.75rem; width:100%;">Generate Summary</button>
+                                    <div class="summary-output" style="padding:0.75rem; border:1px solid var(--border-color); border-radius:12px; background:var(--bg-sidebar); min-height:100px; font-size:0.85rem; max-height:200px; overflow-y:auto;">Summary will appear here...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: PDF Notes Annotator -->
+                    <div id="sr-pdf" class="studyroom-subpage" style="display:none;">
+                        <div class="card glass" style="padding:1.5rem;">
+                            <h3 style="margin-top:0;"><i class="ph-file-pdf"></i> PDF Notes Workspace</h3>
+                            <!-- PDF Drag and drop zone -->
+                            <div id="pdf-drag-drop-zone" style="border:2px dashed var(--border-color); border-radius:12px; padding:2.5rem; text-align:center; cursor:pointer; background:rgba(255,255,255,0.02); margin-bottom:1.5rem; transition: border-color 0.25s;">
+                                <i class="ph-file-pdf" style="font-size:3rem; color:var(--primary-color); display:block; margin-bottom:0.5rem;"></i>
+                                <span style="font-size:1rem; font-weight:600; color:var(--text-main); display:block; margin-bottom:0.25rem;">Drag and drop your study PDF here</span>
+                                <span style="font-size:0.85rem; color:var(--text-muted);">or click to browse local files</span>
+                                <input type="file" id="pdf-file-input" style="display:none;" accept=".pdf">
+                            </div>
+                            <!-- PDF toolbar -->
+                            <div id="pdf-annotate-toolbar" style="display:none; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:12px; padding:0.65rem; margin-bottom:1rem;">
+                                <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                                    <button type="button" class="upload-btn pdf-tool-selector active-tab" id="pdf-tool-select-pan" style="padding:0.4rem 0.65rem; font-size:0.85rem;"><i class="ph-hand-grabbing"></i> View</button>
+                                    <button type="button" class="upload-btn pdf-tool-selector" id="pdf-tool-select-pen" style="padding:0.4rem 0.65rem; font-size:0.85rem;"><i class="ph-pencil"></i> Pen</button>
+                                    <button type="button" class="upload-btn pdf-tool-selector" id="pdf-tool-select-highlighter" style="padding:0.4rem 0.65rem; font-size:0.85rem;"><i class="ph-highlighter"></i> Highlight</button>
+                                    <button type="button" class="upload-btn pdf-tool-selector" id="pdf-tool-select-text" style="padding:0.4rem 0.65rem; font-size:0.85rem;"><i class="ph-textbox"></i> Text</button>
+                                    <button type="button" class="upload-btn pdf-tool-selector" id="pdf-tool-select-eraser" style="padding:0.4rem 0.65rem; font-size:0.85rem;"><i class="ph-eraser"></i> Eraser</button>
+                                    <button type="button" class="upload-btn" id="pdf-tool-action-clear" style="padding:0.4rem 0.65rem; font-size:0.85rem; background:#ef4444; color:white;"><i class="ph-trash"></i> Clear</button>
+                                </div>
+                                <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+                                    <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:var(--text-muted);">
+                                        Color: <input type="color" id="pdf-anno-color" value="#ff0000" style="width:22px; height:22px; border:none; cursor:pointer; background:none; padding:0;">
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; color:var(--text-muted);">
+                                        Brush Size: <input type="range" id="pdf-anno-brush-size" min="1" max="12" value="3" style="width:70px;">
+                                    </label>
+                                    <button type="button" class="upload-btn" id="pdf-action-download-overlay" style="padding:0.4rem 0.75rem; font-size:0.85rem; background:var(--primary-color); color:white;"><i class="ph-download"></i> Save Image Overlay</button>
+                                </div>
+                            </div>
+                            <!-- PDF render area -->
+                            <div id="pdf-canvas-container" style="background:#1e1e24; border-radius:12px; border:1px solid var(--border-color); padding:1.5rem; display:flex; flex-direction:column; gap:2rem; align-items:center; max-height:600px; overflow:auto; min-height:220px; position:relative;">
+                                <div id="pdf-viewer-loading" style="display:none; color:var(--text-muted); text-align:center;"><i class="ph-spinner ph-spin"></i> Rendering PDF pages...</div>
+                                <div id="pdf-viewer-placeholder" style="color:var(--text-muted); text-align:center; padding:3rem 1rem;">
+                                    <i class="ph-file-pdf" style="font-size:3rem; margin-bottom:0.75rem; display:block;"></i>
+                                    Upload a PDF notes file to begin annotations.
+                                </div>
+                                <div id="pdf-pages-list" style="display:flex; flex-direction:column; gap:2rem; align-items:center; width:100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Flashcards deck manager -->
+                    <div id="sr-flashcards" class="studyroom-subpage" style="display:none;">
+                        <div class="dashboard-grid" style="display:grid; grid-template-columns: 1fr 1.5fr; gap:1.5rem;">
+                            <!-- Left Creator -->
+                            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                                <div class="card glass" style="padding:1.25rem;">
+                                    <h3 style="margin-top:0;"><i class="ph-cards" style="color:var(--primary-color);"></i> Decks Browser</h3>
+                                    <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Select Deck</label>
+                                    <select id="fc-deck-selector" class="plan-select" style="width:100%; margin-bottom:0.75rem; padding:0.6rem;"></select>
+                                    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                                        <button type="button" id="fc-deck-new-btn" class="upload-btn" style="flex:1; padding:0.5rem 0.75rem; font-size:0.85rem;">New Deck</button>
+                                        <button type="button" id="fc-deck-del-btn" class="upload-btn" style="background:#ef4444; color:white; padding:0.5rem 0.75rem; font-size:0.85rem;">Delete</button>
+                                    </div>
+                                    <div id="fc-deck-drop-import" style="border:2px dashed var(--border-color); border-radius:10px; padding:1rem; text-align:center; cursor:pointer; background:rgba(255,255,255,0.01);">
+                                        <i class="ph-file-arrow-up" style="font-size:1.5rem; color:var(--primary-color); display:block; margin-bottom:0.25rem;"></i>
+                                        <span style="font-size:0.75rem; font-weight:600; display:block;">Import Deck file</span>
+                                        <span style="font-size:0.65rem; color:var(--text-muted);">JSON/CSV</span>
+                                        <input type="file" id="fc-file-import-input" style="display:none;" accept=".json,.csv">
+                                    </div>
+                                </div>
+                                <div class="card glass" style="padding:1.25rem;">
+                                    <h3 style="margin-top:0;"><i class="ph-plus-circle" style="color:var(--primary-color);"></i> Add Flashcard</h3>
+                                    <div style="display:grid; gap:0.5rem;">
+                                        <input type="text" id="fc-input-front" placeholder="Flashcard Question (Front)" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); font-size:0.9rem;">
+                                        <input type="text" id="fc-input-back" placeholder="Flashcard Answer (Back)" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); font-size:0.9rem;">
+                                        <button type="button" id="fc-add-card-submit" class="upload-btn" style="width:100%; padding:0.65rem;">Add Card</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Right Study Panel -->
+                            <div class="card glass" style="padding:1.5rem; display:flex; flex-direction:column; min-height:480px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem; margin-bottom:1rem;">
+                                    <h3 style="margin:0;"><i class="ph-student" style="color:var(--primary-color);"></i> Flashcard Study</h3>
+                                    <div style="display:flex; gap:0.4rem;">
+                                        <button type="button" class="upload-btn fc-mode-toggle active-tab" id="fc-toggle-mode-quiz" style="padding:0.4rem 0.65rem; font-size:0.8rem;">Study Mode</button>
+                                        <button type="button" class="upload-btn fc-mode-toggle" id="fc-toggle-mode-list" style="padding:0.4rem 0.65rem; font-size:0.8rem;">Browse cards</button>
+                                    </div>
+                                </div>
+                                <!-- Interactive Quiz -->
+                                <div id="fc-submode-quiz" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                    <div id="fc-deck-progress-stats" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Decks Studied: 0 / 0</div>
+                                    <!-- 3D flipping card wrapper -->
+                                    <div class="study-card-wrapper" id="study-card-flip-wrap" style="perspective:1000px; width:100%; max-width:340px; height:200px; cursor:pointer; margin-bottom:1.5rem;">
+                                        <div class="study-card-inner-rot" id="study-card-rotator" style="position:relative; width:100%; height:100%; text-align:center; transition:transform 0.5s; transform-style:preserve-3d; border-radius:18px;">
+                                            <!-- Front -->
+                                            <div class="study-card-face-front" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.25rem; border-radius:18px; border:1px solid var(--border-color); background:rgba(255,255,255,0.06); box-shadow:0 8px 20px rgba(0,0,0,0.15);">
+                                                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Question</div>
+                                                <div id="fc-study-front-txt" style="font-size:1.1rem; font-weight:600; line-height:1.4; max-height:120px; overflow-y:auto;">Add a flashcard to begin study quiz.</div>
+                                                <div style="font-size:0.68rem; color:var(--neon-accent); margin-top:auto;"><i class="ph-arrows-clockwise"></i> Click to reveal</div>
+                                            </div>
+                                            <!-- Back -->
+                                            <div class="study-card-face-back" style="position:absolute; width:100%; height:100%; backface-visibility:hidden; transform:rotateY(180deg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.25rem; border-radius:18px; border:1px solid var(--border-color); background:rgba(255,255,255,0.08); box-shadow:0 8px 20px rgba(0,0,0,0.15);">
+                                                <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Answer</div>
+                                                <div id="fc-study-back-txt" style="font-size:1.1rem; font-weight:600; line-height:1.4; max-height:120px; overflow-y:auto;">Click srs intervals below.</div>
+                                                <div style="font-size:0.68rem; color:var(--neon-accent); margin-top:auto;"><i class="ph-arrows-clockwise"></i> Click to flip back</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- SRS Rating Buttons -->
+                                    <div id="fc-srs-rating-container" style="display:none; gap:0.5rem; width:100%; max-width:320px;">
+                                        <button type="button" class="upload-btn srs-action-btn" data-rate="again" style="flex:1; padding:0.5rem; background:#f87171; color:white; font-size:0.8rem; border-radius:8px;">Again</button>
+                                        <button type="button" class="upload-btn srs-action-btn" data-rate="good" style="flex:1; padding:0.5rem; background:#fbbf24; color:white; font-size:0.8rem; border-radius:8px;">Good</button>
+                                        <button type="button" class="upload-btn srs-action-btn" data-rate="easy" style="flex:1; padding:0.5rem; background:#34d399; color:white; font-size:0.8rem; border-radius:8px;">Easy</button>
+                                    </div>
+                                    <button type="button" id="fc-quiz-next-btn" class="upload-btn" style="display:none; padding:0.5rem 1rem;">Next Card</button>
+                                </div>
+                                <!-- Cards List -->
+                                <div id="fc-submode-list" style="display:none; flex:1;">
+                                    <div id="fc-deck-cards-list-view" style="display:flex; flex-direction:column; gap:0.5rem; max-height:360px; overflow-y:auto; padding:0.5rem;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="planpage" class="page">
+                <header class="page-header" style="position:relative;">
+                    <h1>Plan Page</h1>
+                    <p>Calendar, tasks, focus timer, and concept mapping</p>
+                    <button class="exit-page-btn" onclick="exitToDashboard()" title="Back to Dashboard"><i class="ph-house"></i> Dashboard</button>
+                </header>
+                <div class="plan-page-grid">
+                    <div class="plan-card plan-calendar-card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                            <h3><i class="ph-calendar-check"></i> <span id="plan-calendar-title">Planner</span></h3>
+                            <span style="font-size:0.85rem; color:var(--text-muted);">Click a day · tick tasks below</span>
+                        </div>
+                        <div class="plan-toolbar">
+                            <button type="button" id="planner-btn-prev" class="upload-btn" title="Previous"><i class="ph-caret-left"></i></button>
+                            <button type="button" id="planner-btn-next" class="upload-btn" title="Next"><i class="ph-caret-right"></i></button>
+                            <button type="button" id="planner-btn-month" class="upload-btn active-tab">Month</button>
+                            <button type="button" id="planner-btn-week" class="upload-btn">Week</button>
+                            <button type="button" id="planner-btn-day" class="upload-btn">Day</button>
+                            <select id="holiday-filter" class="plan-select" title="Holiday filter">
+                                <option value="all">All holidays</option>
+                                <option value="international">International</option>
+                                <option value="national">National</option>
+                            </select>
+                        </div>
+                        <div id="calendar-widget" class="modern-calendar"></div>
+                        <div class="cal-legend">
+                            <span><i style="background:rgba(59,130,246,0.5)"></i> International</span>
+                            <span><i style="background:rgba(234,88,12,0.5)"></i> National</span>
+                            <span><i style="background:rgba(139,92,246,0.5)"></i> Your tasks</span>
+                        </div>
+                        <div class="planner-day-panel" id="planner-day-view">
+                            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                                <input type="text" id="planner-task-text" placeholder="Add a task for this day…" style="flex:1; min-width:180px; padding:0.8rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                                <select id="planner-task-time" style="padding:0.8rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                                    <option value="08:00">08:00</option>
+                                    <option value="09:00">09:00</option>
+                                    <option value="10:00">10:00</option>
+                                    <option value="11:00">11:00</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="13:00">13:00</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="15:00">15:00</option>
+                                    <option value="16:00">16:00</option>
+                                    <option value="17:00">17:00</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="19:00">19:00</option>
+                                    <option value="20:00">20:00</option>
+                                </select>
+                                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:var(--text-muted); cursor:pointer; user-select:none;">
+                                    <input type="checkbox" id="planner-task-recurring" style="width:16px; height:16px; cursor:pointer;"> Repeat weekly
+                                </label>
+                                <button type="button" id="planner-add-task-btn" class="upload-btn" style="min-width:100px;">Add task</button>
+                            </div>
+                            <div id="planner-day-holidays" style="margin-bottom:0.75rem; font-size:0.85rem; color:var(--text-muted);"></div>
+                            <div id="planner-day-tasks-list"></div>
+                        </div>
+                        <div id="planner-week-view" style="display:none; margin-top:1.25rem;">
+                            <div id="planner-week-grid" class="planner-week-grid"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                        <div class="plan-card pomodoro-card">
+                            <h3><i class="ph-timer"></i> Pomodoro</h3>
+                            <div class="pomodoro-ring-wrap">
+                                <svg viewBox="0 0 120 120" aria-hidden="true">
+                                    <defs>
+                                        <linearGradient id="pomo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stop-color="var(--primary-color)" />
+                                            <stop offset="100%" stop-color="var(--neon-accent)" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="pomodoro-ring-bg" cx="60" cy="60" r="52"></circle>
+                                    <circle id="pomodoro-ring-progress" class="pomodoro-ring-progress" cx="60" cy="60" r="52" stroke-dasharray="326.726" stroke-dashoffset="0"></circle>
+                                </svg>
+                                <div class="pomodoro-time-display">
+                                    <div id="timer-time">25:00</div>
+                                    <div id="timer-status">Focus</div>
+                                </div>
+                            </div>
+                            <div class="pomodoro-actions">
+                                <button type="button" id="timer-start" class="upload-btn">Start</button>
+                                <button type="button" id="timer-skip" class="upload-btn">Skip phase</button>
+                                <button type="button" id="timer-reset" class="upload-btn">Reset</button>
+                            </div>
+                            <div class="pomodoro-settings">
+                                <label>Focus <input type="number" id="focus-time-input" value="25" min="1" max="90" style="width:52px; padding:0.4rem; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);"> min</label>
+                                <label>Break <input type="number" id="break-time-input" value="5" min="1" max="30" style="width:52px; padding:0.4rem; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);"> min</label>
+                                <span id="timer-cycles">Cycles: 0</span>
+                            </div>
+                        </div>
+                        <div class="plan-card">
+                            <h3><i class="ph-graph"></i> Concept Map</h3>
+                            <div class="concept-map-toolbar">
+                                <input type="text" id="map-node-input" placeholder="New idea…">
+                                <button type="button" id="add-map-node-btn" class="upload-btn">Add</button>
+                                <button type="button" id="clear-map-btn" class="upload-btn" style="background:#ef4444;">Clear</button>
+                            </div>
+                            <div id="concept-map-area">
+                                <svg id="map-svg"></svg>
+                                <div id="node-center" class="concept-node core" style="left:50%;top:50%;">Core Topic</div>
+                            </div>
+                            <p class="concept-map-hint">Drag nodes · double-click to rename · click empty space to place a new node</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="passtime" class="page">
+                <header class="page-header" style="position:relative;">
+                    <h1>Passtime</h1>
+                    <p>Recharge with built-in games &amp; brain breaks</p>
+                    <button class="exit-page-btn" onclick="exitToDashboard()" title="Back to Dashboard"><i class="ph-house"></i> Dashboard</button>
+                </header>
+                <div class="passtime-page-wrap">
+                    <!-- Left: game stage + controls -->
+                    <div class="passtime-left">
+                        <!-- Game cards row -->
+                        <div class="game-cards-row">
+                            <!-- Snake Card -->
+                            <div class="game-card" id="snake-game-card">
+                                <div class="game-card-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                    <i class="ph-game-controller" style="color:#fff;"></i>
+                                </div>
+                                <h4>3D Snake</h4>
+                                <p>Eat glowing cubes to grow. Avoid the walls and yourself.</p>
+                                <div class="game-card-stat">Best: <span id="snake-highscore">0</span> cubes</div>
+                                <div class="game-card-btns">
+                                    <button type="button" id="play-snake-btn" title="Play in panel"><i class="ph-play"></i> Play</button>
+                                    <button type="button" class="fullscreen-btn play-snake-fullscreen" title="Open fullscreen"><i class="ph-arrows-out"></i> Full</button>
+                                </div>
+                            </div>
+                            <!-- Stickman Card -->
+                            <div class="game-card" id="stickman-game-card">
+                                <div class="game-card-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">
+                                    <i class="ph-person-simple-run" style="color:#fff;"></i>
+                                </div>
+                                <h4>Stickman Arena</h4>
+                                <p>Arrows: move &amp; dodge · Space/X: punch · R: restart.</p>
+                                <div class="game-card-stat">Wins: <span id="stickman-highscore">0</span></div>
+                                <div class="game-card-btns">
+                                    <button type="button" id="play-stickman-btn" title="Play in panel"><i class="ph-play"></i> Play</button>
+                                    <button type="button" class="fullscreen-btn play-stickman-fullscreen" title="Open fullscreen"><i class="ph-arrows-out"></i> Full</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:0.75rem; padding:0.75rem 0.95rem; border-radius:14px; border:1px solid var(--border-color); background:rgba(255,255,255,0.04);">
+                            <div style="display:flex; align-items:center; gap:0.55rem; font-weight:600; color:var(--text-main);">
+                                <i class="ph-clock-countdown" style="color:var(--neon-accent);"></i>
+                                <span>Game timer</span>
+                                <span id="game-timer-display" style="font-variant-numeric:tabular-nums; color:var(--text-muted);">15:00</span>
+                            </div>
+                            <label style="display:flex; align-items:center; gap:0.45rem; color:var(--text-muted); font-size:0.84rem;">
+                                <span>Duration</span>
+                                <select id="game-duration-select" style="padding:0.4rem 0.6rem; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-main); font-family:inherit;">
+                                    <option value="1">1 min</option>
+                                    <option value="3">3 min</option>
+                                    <option value="5">5 min</option>
+                                    <option value="10">10 min</option>
+                                    <option value="15" selected>15 min</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <!-- Live game stage -->
+                        <div id="passtime-game-stage" class="passtime-game-stage">
+                            <div class="game-stage-placeholder">
+                                <i class="ph-game-controller"></i>
+                                <span>Select a game above to play inline,<br>or open it fullscreen for the best experience.</span>
+                            </div>
+                        </div>
+
+                        <!-- Virtual on-screen D-pad -->
+                        <div id="inline-game-controls" class="inline-controls-wrap" style="display:none;">
+                            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+                                <button class="game-ctl-inline" id="ictrl-up">▲</button>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="game-ctl-inline" id="ictrl-left">◀</button>
+                                    <button class="game-ctl-inline" id="ictrl-down">▼</button>
+                                    <button class="game-ctl-inline" id="ictrl-right">▶</button>
+                                </div>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:6px; margin-left:12px;">
+                                <button class="game-ctl-inline" id="ictrl-jump" style="width:72px; background:var(--primary-color); color:white; display:none;">Jump</button>
+                                <button class="game-ctl-inline" id="ictrl-punch" style="width:72px; background:var(--neon-accent); color:#000; display:none;">Punch</button>
+                            </div>
+                        </div>
+                        <p id="game-hint" style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:0.5rem;"></p>
+                    </div>
+
+                    <!-- Right: stats + tips -->
+                    <div class="passtime-right">
+                        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:20px; padding:1.25rem;">
+                            <h4 style="margin:0 0 1rem; font-size:0.95rem; display:flex; align-items:center; gap:0.4rem;"><i class="ph-chart-bar" style="color:var(--primary-color);"></i> Your Game Stats</h4>
+                            <div class="passtime-stats-bar">
+                                <div class="passtime-stat-card">
+                                    <div class="stat-label">Snake Record</div>
+                                    <div class="stat-value" id="snake-hs-display">—</div>
+                                    <div class="stat-sub">best cubes eaten</div>
+                                </div>
+                                <div class="passtime-stat-card">
+                                    <div class="stat-label">Arena Wins</div>
+                                    <div class="stat-value" id="stickman-hs-display">—</div>
+                                    <div class="stat-sub">rounds won</div>
+                                </div>
+                                <div class="passtime-stat-card">
+                                    <div class="stat-label">Snake Sessions</div>
+                                    <div class="stat-value" id="snake-sessions-display">—</div>
+                                    <div class="stat-sub">games started</div>
+                                </div>
+                                <div class="passtime-stat-card">
+                                    <div class="stat-label">Arena Sessions</div>
+                                    <div class="stat-value" id="stickman-sessions-display">—</div>
+                                    <div class="stat-sub">games started</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="break-tip-card">
+                            <h5><i class="ph-brain"></i> Study Break Tips</h5>
+                            <p id="break-tip-text">Loading tip...</p>
+                        </div>
+
+                        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:20px; padding:1.25rem;">
+                            <h4 style="margin:0 0 0.75rem; font-size:0.95rem; display:flex; align-items:center; gap:0.4rem;"><i class="ph-timer" style="color:var(--neon-accent);"></i> Break Timer</h4>
+                            <div id="break-timer-display" style="font-size:2.2rem; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; background:linear-gradient(135deg,var(--primary-color),var(--neon-accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.75rem;">05:00</div>
+                            <div style="display:flex; gap:0.5rem; justify-content:center;">
+                                <button id="break-timer-start" class="settings-btn primary" style="flex:1;"><i class="ph-play"></i> Start</button>
+                                <button id="break-timer-reset" class="settings-btn"><i class="ph-arrow-counter-clockwise"></i></button>
+                            </div>
+                            <div style="display:flex; gap:0.4rem; justify-content:center; margin-top:0.6rem; flex-wrap:wrap;">
+                                <button class="settings-btn break-preset" data-mins="5" style="font-size:0.78rem; padding:0.35rem 0.65rem;">5 min</button>
+                                <button class="settings-btn break-preset" data-mins="10" style="font-size:0.78rem; padding:0.35rem 0.65rem;">10 min</button>
+                                <button class="settings-btn break-preset" data-mins="15" style="font-size:0.78rem; padding:0.35rem 0.65rem;">15 min</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings" class="page">
+                <header class="header-top" style="position:relative;">
+                    <h2 class="page-title">Settings</h2>
+                    <button class="exit-page-btn" onclick="exitToDashboard()" title="Back to Dashboard"><i class="ph-house"></i> Dashboard</button>
+                </header>
+                <div class="dashboard-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; padding:1.5rem;">
+                    <div class="card" style="padding:1.5rem;">
+                        <h3 style="margin-top:0;"><i class="ph-user-circle"></i> Profile</h3>
+                        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem;">
+                            <label style="font-size:0.9rem; color:var(--text-muted);">Active profile</label>
+                            <select id="account-select" style="width:100%; padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);"></select>
+                            <button id="add-profile-btn" class="upload-btn">Add Profile</button>
+                            <button id="rename-profile-btn" class="upload-btn">Rename Profile</button>
+                            <button id="delete-profile-btn" class="upload-btn" style="background:#ff4d4d;">Delete Profile</button>
+                        </div>
+                    </div>
+                    <div class="card" style="padding:1.5rem;">
+                        <h3 style="margin-top:0;"><i class="ph-palette"></i> Theme</h3>
+                        <div class="theme-card-area" style="margin-top:1rem;">
+                            <div id="theme-card-list" class="theme-card-list" aria-label="Pick a theme"></div>
+                            <div class="theme-preview-stack">
+                                <div id="theme-preview" class="theme-preview" aria-hidden="true"></div>
+                                <div id="theme-preview-label" class="theme-preview-label">Choose a theme to preview it live</div>
+                                <select id="theme-selector" class="theme-selector" aria-label="Theme selector">
+                                    <option value="dark-live">Live Dark</option>
+                                </select>
+                                <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                    <div>
+                                        <span style="font-weight: 600; display: block; color: var(--text-main);">Interactive Live Wallpaper</span>
+                                        <small style="color: var(--text-muted);">Enable 3D physics wallpaper</small>
+                                    </div>
+                                    <input type="checkbox" id="live-wallpaper-toggle" style="width: 20px; height: 20px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding:1.5rem; grid-column:span 2;">
+                        <h3 style="margin-top:0; display:flex; align-items:center; gap:0.5rem;"><i class="ph-cloud-arrow-up" style="color:var(--primary-color);"></i> Cloud Sync & Account</h3>
+                        <div id="sync-auth-unauthenticated" style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-top:1rem;">
+                            <!-- Login Form -->
+                            <div style="display:flex; flex-direction:column; gap:0.8rem; border-right:1px solid var(--border-color); padding-right:1.5rem;">
+                                <h4 style="margin:0 0 0.5rem; color:var(--text-main);">Log In</h4>
+                                <input type="text" id="sync-login-username" placeholder="Username or Email" class="plan-select" style="padding:0.75rem; width:100%;">
+                                <input type="password" id="sync-login-password" placeholder="Password" class="plan-select" style="padding:0.75rem; width:100%;">
+                                <button id="sync-login-btn" class="settings-btn primary" style="width:100%;"><i class="ph-sign-in"></i> Log In</button>
+                                <div id="sync-login-error" style="color:#ef4444; font-size:0.8rem; min-height:16px;"></div>
+                            </div>
+                            <!-- Register Form -->
+                            <div style="display:flex; flex-direction:column; gap:0.8rem;">
+                                <h4 style="margin:0 0 0.5rem; color:var(--text-main);">Register Account</h4>
+                                <input type="text" id="sync-reg-username" placeholder="Choose Username" class="plan-select" style="padding:0.75rem; width:100%;">
+                                <input type="email" id="sync-reg-email" placeholder="Email Address" class="plan-select" style="padding:0.75rem; width:100%;">
+                                <input type="password" id="sync-reg-password" placeholder="Choose Password" class="plan-select" style="padding:0.75rem; width:100%;">
+                                <button id="sync-reg-btn" class="settings-btn" style="width:100%;"><i class="ph-user-plus"></i> Create Account</button>
+                                <div id="sync-reg-error" style="color:#ef4444; font-size:0.8rem; min-height:16px;"></div>
+                            </div>
+                        </div>
+                        <div id="sync-auth-authenticated" style="display:none; flex-direction:column; gap:1.25rem; margin-top:1rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:12px; padding:1rem;">
+                                <div>
+                                    <div style="font-size:0.85rem; color:var(--text-muted);">Signed In As</div>
+                                    <strong id="sync-active-user" style="font-size:1.15rem; color:var(--primary-color);">Guest</strong>
+                                    <div id="sync-active-email" style="font-size:0.82rem; color:var(--text-muted);">guest@cognify.com</div>
+                                </div>
+                                <button id="sync-logout-btn" class="settings-btn danger" style="padding:0.6rem 1.2rem;"><i class="ph-sign-out"></i> Log Out</button>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                                <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                                    <h4 style="margin:0; color:var(--text-main);">Sync Controls</h4>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; min-height:42px; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+                                        <div style="display:flex; flex-direction:column;">
+                                            <span style="font-size:0.9rem; font-weight:600;">Online Syncing</span>
+                                            <small style="font-size:0.75rem; color:var(--text-muted);">Sync modifications automatically</small>
+                                        </div>
+                                        <input type="checkbox" id="sync-online-toggle" checked style="width:20px; height:20px; cursor:pointer;">
+                                    </div>
+                                    <button id="sync-now-btn" class="settings-btn primary" style="padding:0.75rem;"><i class="ph-arrows-clockwise"></i> Sync Now</button>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:0.5rem; background:rgba(0,0,0,0.1); border-radius:12px; padding:1rem; border:1px solid var(--border-color);">
+                                    <h4 style="margin:0 0 0.25rem 0; font-size:0.9rem; color:var(--text-main);">Sync Status</h4>
+                                    <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-muted);">
+                                        <span>Last Synced:</span>
+                                        <strong id="sync-last-time" style="color:var(--text-main);">Never</strong>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-muted);">
+                                        <span>Pending Local Changes:</span>
+                                        <strong id="sync-pending-count" style="color:var(--neon-accent);">0</strong>
+                                    </div>
+                                    <div style="display:flex; gap:0.6rem; align-items:center; margin-top:auto;">
+                                        <div id="sync-status-msg" style="font-size:0.82rem; color:var(--text-muted); font-style:italic;">Operating in offline mode. Log in to sync to cloud.</div>
+                                        <button id="sync-retry-btn" style="display:none; padding:0.35rem 0.6rem; border-radius:8px; border:1px solid var(--border-color); background:transparent; color:var(--neon-accent); font-size:0.82rem; cursor:pointer;">Retry</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="padding:1.5rem; grid-column:span 2;">
+                        <h3 style="margin-top:0;"><i class="ph-sliders"></i> Apollo & Audio</h3>
+                        <div style="display:grid; gap:1rem; margin-top:1rem;">
+                            <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted);">
+                                <span>Apollo outfit</span>
+                                <select id="apollo-outfit" style="padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                                    <option value="trendy">Trendy</option>
+                                    <option value="classic">Classic</option>
+                                    <option value="futuristic">Futuristic</option>
+                                </select>
+                            </label>
+                            <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted);">
+                                <span>Apollo language</span>
+                                <select id="apollo-voice-lang" style="padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                                    <option value="en-US">English (US)</option>
+                                    <option value="en-GB">English (UK)</option>
+                                </select>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.75rem; font-size:0.9rem; color:var(--text-muted);">
+                                <input id="notification-toggle" type="checkbox">
+                                <span>Desktop notifications</span>
+                            </label>
+                            <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted);">
+                                <span>Ambient audio type</span>
+                                <select id="ambient-type" style="padding:0.85rem; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color);">
+                                    <option value="pink">Pink Noise</option>
+                                    <option value="brown">Brown Noise</option>
+                                </select>
+                            </label>
+                            <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.9rem; color:var(--text-muted);">
+                                <span>Ambient volume</span>
+                                <input id="ambient-volume" type="range" min="0" max="1" step="0.05" value="0.45">
+                            </label>
+                            <button id="ambient-toggle" class="upload-btn" style="width:140px;">Play Ambient</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chat / Voice Apollo -->
+    <div id="apollo-chat" style="position:fixed; bottom:20px; right:20px; z-index:100; display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+        <div id="apollo-expr-bubble" style="background:var(--primary-color); color:#fff; padding:0.5rem 1rem; border-radius:16px 16px 0 16px; display:none; max-width:200px;"></div>
+        <div id="apollo-full-chat-box" style="display:none; background:var(--bg-sidebar); border:1px solid var(--border-color); border-radius:12px; padding:1rem; width:300px;">
+            <input type="text" id="apollo-full-input" placeholder="Ask Apollo..." style="width:100%; margin-bottom:0.5rem; padding:0.5rem; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-main); color:var(--text-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.25rem;">
+                <button id="apollo-full-send" class="upload-btn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:0.4rem;"><i class="ph-paper-plane-right" style="font-size:1rem;"></i> Send</button>
+                <button id="apollo-full-clear" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#f87171;" title="Delete History"><i class="ph-trash" style="font-size:1rem;"></i></button>
+                <button id="apollo-full-close" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid var(--border-color);" title="Close & Hide"><i class="ph-x" style="font-size:1rem;"></i></button>
+                <select id="apollo-voice-lang-chat" style="background:none; border:none; color:var(--text-color); cursor:pointer;"><option>EN</option></select>
+            </div>
+        </div>
+        <!-- Scrollable message bubble — messages appended here, cleared by × button -->
+        <div id="apollo-quick-messages" style="display:none; flex-direction:column; gap:0.5rem; max-height:260px; overflow-y:auto; width:300px;"></div>
+        <div style="display:flex; gap:0.35rem; align-items:center; width:300px; justify-content:space-between;">
+            <button id="apollo-voice-btn" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Voice Input"><i class="ph-microphone"></i></button>
+            <input type="text" id="apollo-input" placeholder="Quick chat..." style="flex:1; min-width:80px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-sidebar); color:var(--text-color); padding:0.4rem 0.8rem; font-size:0.85rem;">
+            <button id="apollo-send-btn" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Send"><i class="ph-paper-plane-right"></i></button>
+            <button id="apollo-quick-delete" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#f87171; flex-shrink:0;" title="Delete History"><i class="ph-trash" style="font-size:1rem;"></i></button>
+            <button id="apollo-clear-btn" class="upload-btn" style="border-radius:50%; width:36px; height:36px; padding:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); flex-shrink:0;" title="Exit & Close"><i class="ph-x" style="font-size:1rem;"></i></button>
+        </div>
+    </div>
+
+    <!-- Extras / Settings Modal (dummy ids needed by JS) -->
+    <div id="extras-modal" style="display:none;">
+        <button id="extras-close">Close</button>
+        <button id="extras-btn" style="display:none;">Extras</button>
+        <div style="padding:1rem; color:var(--text-color);">Extras placeholder</div>
+    </div>
+
+    <div id="calendar-day-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1500; align-items:center; justify-content:center; padding:1.5rem;">
+        <div style="background:var(--bg-main); padding:1.5rem; border-radius:18px; border:1px solid var(--border-color); width:100%; max-width:520px; box-shadow:0 18px 45px rgba(0,0,0,0.22);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0;">Day Details</h3>
+                <button id="calendar-day-modal-close" class="upload-btn">Close</button>
+            </div>
+            <div id="calendar-day-content" style="min-height:120px; color:var(--text-color);"></div>
+        </div>
+    </div>
+
+    <!-- Game Modal -->
+    <div id="game-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1200; align-items:center; justify-content:center;">
+        <div style="width:90%; max-width:960px; height:70%; background:var(--bg-main); border-radius:12px; border:1px solid var(--border-color); display:flex; flex-direction:column; overflow:hidden; position:relative;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.9rem; border-bottom:1px solid var(--border-color);">
+                <div style="display:flex; gap:0.8rem; align-items:center;"><strong style="font-size:1.05rem;">Game</strong><span id="game-time-left" style="font-size:0.95rem; color:var(--text-muted);">15:00</span></div>
+                <div style="display:flex; gap:0.5rem; align-items:center;"><button id="close-game-btn" class="upload-btn">Close</button></div>
+            </div>
+            <div id="game-container" style="flex:1; position:relative; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(0,0,0,0.04), transparent);">
+                <!-- Canvas or WebGL rendered here -->
+                <div id="game-controls" style="position:absolute; left:12px; bottom:12px; display:flex; gap:8px; z-index:50; flex-wrap:wrap; max-width:320px;">
+                    <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+                        <button class="upload-btn game-ctl" id="ctl-up" style="width:48px;height:48px;">▲</button>
+                        <div style="display:flex; gap:6px;">
+                            <button class="upload-btn game-ctl" id="ctl-left" style="width:48px;height:48px;">◀</button>
+                            <button class="upload-btn game-ctl" id="ctl-down" style="width:48px;height:48px;">▼</button>
+                            <button class="upload-btn game-ctl" id="ctl-right" style="width:48px;height:48px;">▶</button>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; margin-left:8px;">
+                        <button class="upload-btn game-ctl" id="ctl-jump" style="width:72px;height:48px; background:var(--primary-color);">Jump</button>
+                        <button class="upload-btn game-ctl" id="ctl-punch" style="width:72px;height:48px; background:var(--neon-accent);">Punch</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Conflict Modal -->
+    <div id="sync-conflict-modal" style="display:none; position:fixed; inset:0; background:rgba(2,8,18,0.85); z-index:2500; align-items:center; justify-content:center; padding:1.5rem;">
+        <div class="card" style="background:var(--bg-main); border:1px solid var(--border-color); padding:1.5rem; border-radius:18px; width:100%; max-width:680px; box-shadow:0 18px 45px rgba(0,0,0,0.22); display:flex; flex-direction:column; gap:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+                <h3 style="margin:0; display:flex; align-items:center; gap:0.5rem; color:var(--neon-accent);"><i class="ph-warning"></i> Sync Conflict Detected</h3>
+                <span style="font-size:0.85rem; color:var(--text-muted);">Please resolve changes for: <span id="conflict-item-type" style="font-weight:bold; color:var(--text-main);">Note</span></span>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.4;">
+                This item was modified both locally and on the server. Please select which version you wish to preserve.
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+                <!-- Local -->
+                <div class="card" id="conflict-local-card" style="padding:1.1rem; border-color:var(--primary-color); cursor:pointer; background:rgba(255,255,255,0.03); transition:all 0.2s; border-width:2px;">
+                    <div style="font-size:0.72rem; color:var(--primary-color); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">Local (Your Device)</div>
+                    <h4 id="conflict-local-title" style="margin:0 0 0.5rem 0; font-size:1.1rem; color:var(--text-main);">Untitled</h4>
+                    <div id="conflict-local-body" style="font-size:0.85rem; color:var(--text-muted); max-height:150px; overflow-y:auto; white-space:pre-wrap;">...</div>
+                </div>
+                <!-- Server -->
+                <div class="card" id="conflict-server-card" style="padding:1.1rem; border-color:var(--border-color); cursor:pointer; background:rgba(255,255,255,0.03); transition:all 0.2s; border-width:1px;">
+                    <div style="font-size:0.72rem; color:var(--neon-accent); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">Server (Cloud)</div>
+                    <h4 id="conflict-server-title" style="margin:0 0 0.5rem 0; font-size:1.1rem; color:var(--text-main);">Untitled</h4>
+                    <div id="conflict-server-body" style="font-size:0.85rem; color:var(--text-muted); max-height:150px; overflow-y:auto; white-space:pre-wrap;">...</div>
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:0.5rem;">
+                <button id="conflict-resolve-btn" class="upload-btn" style="background:var(--primary-color); color:white; padding:0.65rem 1.25rem; font-weight:600;">Keep Selected Version</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="holidays-data.js?v=3"></script>
+    <script src="games.js?v=4"></script>
+    <script src="game-stats.js"></script>
+    <script src="dictionary-utils.js"></script>
+    <script src="dictionary.js?v=3"></script>
+    <script src="app.js?v=4"></script>
+</body>
+    <!-- Toast container for transient notifications -->
+    <div id="cognify-toast-container" style="position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:9999; pointer-events:none"></div>
+</html>

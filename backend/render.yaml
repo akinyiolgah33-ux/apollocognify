@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: cognify-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    disk:
+      name: sqlite-db
+      mountPath: /opt/render/project/src/database
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 10000

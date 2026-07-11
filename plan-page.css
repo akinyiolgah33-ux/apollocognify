@@ -1,0 +1,316 @@
+/* plan-page.css */
+.plan-page-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    align-items: start;
+}
+
+.plan-card {
+    background: var(--bg-card, rgba(255,255,255,0.05));
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.plan-card h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-main);
+}
+
+.plan-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.plan-toolbar .upload-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    background: var(--bg-sidebar);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.plan-toolbar .upload-btn.active-tab, .plan-toolbar .upload-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.plan-select {
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    background: var(--bg-sidebar);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    outline: none;
+}
+
+/* Modern Calendar Styles */
+.modern-calendar {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.cal-header button {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+}
+
+.cal-header button:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.cal-grid-wrap {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: 0.9fr repeat(7, 1fr);
+    gap: 0.4rem;
+    align-items: start;
+}
+
+.cal-week-label,
+.cal-week-num,
+.cal-dow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.65rem 0.5rem;
+    border-radius: 16px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.03);
+}
+
+.cal-week-num {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    font-size: 0.85rem;
+}
+
+.cal-cell {
+    min-height: 96px;
+    padding: 0.9rem;
+    border-radius: 18px;
+    background: var(--bg-sidebar);
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-main);
+    word-break: break-word;
+}
+
+.cal-cell:hover {
+    border-color: var(--primary-color);
+    background: rgba(255,255,255,0.08);
+}
+
+.cal-cell.other-month {
+    opacity: 0.55;
+    background: rgba(255,255,255,0.03);
+}
+
+.cal-cell.today {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.cal-cell.selected {
+    box-shadow: 0 0 0 2px var(--neon-accent);
+}
+
+.cal-day-num {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.cal-dots {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+}
+
+.cal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.cal-dot.holiday-intl-dot { background: #3b82f6; }
+.cal-dot.holiday-national-dot { background: #ea580c; }
+.cal-dot.task-dot { background: #8b5cf6; }
+
+.cal-pill {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.28rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cal-pill.holiday-intl { background: rgba(59,130,246,0.14); color: #3b82f6; }
+.cal-pill.holiday-national { background: rgba(234,88,12,0.14); color: #ea580c; }
+.cal-pill.task-pill { background: rgba(139,92,246,0.14); color: #8b5cf6; }
+.cal-pill.task-done { opacity: 0.75; text-decoration: line-through; }
+
+.cal-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.cal-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cal-legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* Day Tasks View */
+.planner-day-panel {
+    background: rgba(0,0,0,0.1);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+}
+
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.task-item.recurring {
+    border-left: 3px solid rgba(234,88,12,1);
+}
+
+.task-actions button {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.task-actions button:hover {
+    color: #ef4444;
+}
+
+/* Dictionary Styles */
+.dict-search-wrap {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.dict-search-wrap input {
+    flex: 1;
+    padding: 0.8rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-sidebar);
+    color: var(--text-main);
+}
+
+.dict-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0,0,0,0.1);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    min-height: 100px;
+}
+
+.dict-word {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.dict-pos {
+    font-size: 0.85rem;
+    color: var(--neon-accent);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.dict-def {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-main);
+}
+
+.dict-synonyms {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.dict-synonyms span {
+    color: var(--text-main);
+    background: var(--bg-sidebar);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+}
+
+@media (max-width: 900px) {
+    .plan-page-grid {
+        grid-template-columns: 1fr;
+    }
+}

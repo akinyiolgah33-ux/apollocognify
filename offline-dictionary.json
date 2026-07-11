@@ -1,0 +1,27 @@
+{
+    "cognify": {
+        "pos": "verb",
+        "definition": "To perceive, know, or understand something.",
+        "synonyms": ["comprehend", "perceive", "apprehend"]
+    },
+    "study": {
+        "pos": "verb",
+        "definition": "The devotion of time and attention to acquiring knowledge on an academic subject.",
+        "synonyms": ["learn", "examine", "research"]
+    },
+    "plan": {
+        "pos": "noun",
+        "definition": "A detailed proposal for doing or achieving something.",
+        "synonyms": ["scheme", "strategy", "proposal"]
+    },
+    "calendar": {
+        "pos": "noun",
+        "definition": "A chart or series of pages showing the days, weeks, and months of a particular year.",
+        "synonyms": ["almanac", "schedule", "timetable"]
+    },
+    "dictionary": {
+        "pos": "noun",
+        "definition": "A book or electronic resource that lists the words of a language and gives their meaning.",
+        "synonyms": ["lexicon", "glossary", "vocabulary"]
+    }
+}
